@@ -1,0 +1,63 @@
+---
+- hosts: all
+  become: yes
+  vars_files:
+    - ./vars.yml
+
+  tasks:
+  - name: apt-get update
+    apt: update_cache=yes cache_valid_time=60
+
+  - name: apt-get upgrade
+    apt: upgrade=yes
+
+  - name: add keyserver to apt
+    command: >
+      apt-key adv
+      --keyserver hkp://p80.pool.sks-keyservers.net:80
+      --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+
+  - name: add custom postgres repo to apt
+    lineinfile: >
+      dest=/etc/apt/sources.list.d/pgdg.list
+      line="deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main"
+      state=present
+      create=yes
+    notify: apt-get update
+
+  - name: ensure packages are installed
+    apt: name={{item}}
+    with_items:
+      - python-software-properties
+      - software-properties-common
+      - libpq-dev
+      - python-psycopg2
+      - postgresql-9.4
+      - postgresql-client-common
+
+  - name: postgresql should listen on all ports
+    lineinfile: >
+      dest=/etc/postgresql/9.4/main/postgresql.conf
+      regexp="^listen_addresses"
+      line="listen_addresses = '*'"
+      state=present
+
+  - name: postgresql should allow access to host
+    copy:
+      dest: /etc/postgresql/9.4/main/pg_hba.conf
+      content: |
+        local   all   postgres   trust
+        local   all   all        trust
+        host    all   all        0.0.0.0/0   trust
+    notify:
+      - restart postgresql
+
+  - name: foo
+    postgresql_user: name=postgres state=present role_attr_flags=SUPERUSER
+
+  handlers:
+    - name: restart postgresql
+      service: name=postgresql state=restarted
+
+    - name: apt-get update
+      apt: update_cache=yes cache_valid_time=60

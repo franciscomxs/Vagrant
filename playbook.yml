@@ -64,7 +64,7 @@
   - name: Make postgres a SUPERUSER
     postgresql_user: name=postgres state=present role_attr_flags=SUPERUSER
 
-  - name: Add policies to trevent ImageMagic vulnerabilities to be exploit
+  - name: Add policies to prevent ImageMagic vulnerabilities to be exploit
     file:
       src: files/policy.xml
       dest: /etc/ImageMagick/

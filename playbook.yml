@@ -60,7 +60,7 @@
     notify:
       - restart postgresql
 
-  - name: foo
+  - name: Make postgres a SUPERUSER
     postgresql_user: name=postgres state=present role_attr_flags=SUPERUSER
 
   handlers:
